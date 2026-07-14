@@ -1,0 +1,750 @@
+:root {
+    --background-color: #f4f7f9;
+    --container-bg: #ffffff;
+    --primary-color: #4a90e2;
+    --text-color: #333;
+    --subtle-text-color: #888;
+    --border-color: #e0e0e0;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --completed-color: #9b9b9b;
+}
+
+body {
+    /*font-family: 'Noto Sans SC', sans-serif;*/
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background-color: var(--background-color);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: var(--text-color);
+}
+
+.container {
+    background-color: var(--container-bg);
+    border-radius: 12px;
+    box-shadow: 0 8px 30px var(--shadow-color);
+    width: 100%;
+    max-width: 780px;
+    padding: 40px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+/* 登录界面 */
+#login-screen {
+    text-align: center;
+}
+
+#login-screen h1 {
+    font-size: 2em;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+#login-screen p {
+    color: var(--subtle-text-color);
+    margin-bottom: 30px;
+}
+
+#email-input {
+    width: 100%;
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1em;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+    transition: border-color 0.3s;
+}
+
+#email-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+#login-btn {
+    width: 100%;
+    padding: 15px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#login-btn:hover {
+    background-color: #357abd;
+}
+
+
+/* Todo 应用界面 */
+.hidden {
+    display: none;
+}
+
+header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+
+.user-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    color: var(--subtle-text-color);
+    font-size: 0.9em;
+}
+
+#logout-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--subtle-text-color);
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+#logout-btn:hover {
+    background-color: #f1f1f1;
+    color: var(--text-color);
+}
+
+header h1 {
+    text-align: center;
+    font-size: 2.5em;
+    font-weight: 700;
+    margin: 0;
+}
+
+#new-todo-form {
+    display: flex;
+    margin-top: 20px;
+}
+
+#new-todo-input {
+    flex-grow: 1;
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px 0 0 8px;
+    font-size: 1em;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+#new-todo-input:focus {
+    border-color: var(--primary-color);
+}
+
+#new-todo-form button {
+    padding: 15px 20px;
+    font-size: 1.5em;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 0 8px 8px 0;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#new-todo-form button:hover {
+    background-color: #357abd;
+}
+
+#todo-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.todo-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 5px;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s;
+}
+
+.todo-item:last-child {
+    border-bottom: none;
+}
+
+.todo-item:hover {
+    background-color: #fafafa;
+}
+
+.todo-item .checkbox {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+    cursor: pointer;
+    margin-right: 15px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.todo-item.completed .checkbox {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.todo-item.completed .checkbox::after {
+    content: '✔';
+    color: white;
+    font-size: 14px;
+}
+
+.todo-item .content {
+    flex-grow: 1;
+    transition: color 0.3s;
+}
+
+.todo-item.completed .content {
+    text-decoration: line-through;
+    color: var(--completed-color);
+}
+
+.todo-item .delete-btn {
+    background: none;
+    border: none;
+    color: var(--subtle-text-color);
+    font-size: 1.2em;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.todo-item:hover .delete-btn {
+    opacity: 1;
+}
+
+footer {
+    text-align: center;
+    margin-top: 30px;
+    font-size: 0.8em;
+    color: var(--subtle-text-color);
+}
+
+footer a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+/* ===== Tab Navigation ===== */
+.nav-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 20px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0;
+}
+
+.nav-tab {
+    background: none;
+    border: none;
+    padding: 10px 16px;
+    font-size: 0.95em;
+    cursor: pointer;
+    color: var(--subtle-text-color);
+    transition: all 0.3s;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.nav-tab:hover {
+    color: var(--text-color);
+}
+
+.nav-tab.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* ===== View Panel ===== */
+.view-container {
+    max-height: 55vh;
+    overflow-y: auto;
+}
+
+.view-panel {
+    display: none;
+}
+
+.view-panel.active {
+    display: block;
+}
+
+/* ===== View Controls ===== */
+.view-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 16px 0;
+    flex-wrap: wrap;
+}
+
+.ctrl-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.ctrl-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.today-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    font-weight: 500;
+}
+
+.today-btn:hover {
+    background-color: #357abd;
+}
+
+.view-controls span {
+    font-size: 1.05em;
+    font-weight: 500;
+    min-width: 120px;
+    text-align: center;
+}
+
+.year-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.05em;
+    font-weight: 500;
+}
+
+/* ===== New Todo Form (Daily View) ===== */
+#new-todo-form {
+    display: flex;
+    margin-top: 16px;
+    gap: 0;
+}
+
+#new-todo-input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px 0 0 8px;
+    font-size: 1em;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+#new-todo-input:focus {
+    border-color: var(--primary-color);
+}
+
+#new-todo-type {
+    padding: 12px 8px;
+    border: 1px solid var(--border-color);
+    border-left: none;
+    border-right: none;
+    font-size: 0.9em;
+    background: white;
+    color: var(--text-color);
+    outline: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+#new-todo-form button {
+    padding: 12px 18px;
+    font-size: 1.3em;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 0 8px 8px 0;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#new-todo-form button:hover {
+    background-color: #357abd;
+}
+
+/* ===== Progress Bar ===== */
+.progress-bar-container {
+    position: relative;
+    width: 100%;
+    height: 24px;
+    background-color: #eef1f5;
+    border-radius: 12px;
+    margin: 12px 0;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), #6db3f2);
+    border-radius: 12px;
+    width: 0%;
+    transition: width 0.5s ease;
+}
+
+.progress-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.75em;
+    font-weight: 600;
+    color: #555;
+}
+
+/* ===== List Views (Weekly, Monthly) ===== */
+#weekly-todo-list,
+#monthly-todo-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* ===== Kanban Board ===== */
+.kanban-board {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    min-height: 200px;
+}
+
+.kanban-column {
+    background-color: #f8f9fb;
+    border-radius: 10px;
+    padding: 12px;
+    min-height: 180px;
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.kanban-column.drag-over {
+    border-color: var(--primary-color);
+    background-color: #f0f5ff;
+}
+
+.kanban-column-header {
+    font-size: 0.95em;
+    font-weight: 600;
+    margin: 0 0 10px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.todo-header {
+    color: #e67e22;
+}
+
+.progress-header {
+    color: #3498db;
+}
+
+.done-header {
+    color: #27ae60;
+}
+
+.kanban-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 40px;
+}
+
+.kanban-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: grab;
+    transition: all 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.kanban-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.kanban-card.dragging {
+    opacity: 0.4;
+    transform: rotate(2deg);
+}
+
+.kanban-card .card-content {
+    font-size: 0.95em;
+    margin-bottom: 6px;
+    word-break: break-word;
+}
+
+.kanban-card .card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75em;
+}
+
+/* ===== Task Type Badge ===== */
+.task-type-badge {
+    display: inline-block;
+    font-size: 0.7em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+.task-type-badge.daily {
+    background-color: #e8f4fd;
+    color: #3498db;
+}
+
+.task-type-badge.weekly {
+    background-color: #fef3e2;
+    color: #e67e22;
+}
+
+.task-type-badge.monthly {
+    background-color: #e8f8e8;
+    color: #27ae60;
+}
+
+.todo-item .task-type-badge {
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+/* ===== Empty Hint ===== */
+.empty-hint {
+    text-align: center;
+    color: var(--subtle-text-color);
+    padding: 30px 0;
+    font-size: 0.9em;
+    display: none;
+}
+
+.empty-hint.visible {
+    display: block;
+}
+
+/* ===== Analytics ===== */
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #f8f9fb, #ffffff);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+}
+
+.stats-card .stat-value {
+    font-size: 1.8em;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.stats-card .stat-label {
+    font-size: 0.8em;
+    color: var(--subtle-text-color);
+    margin-top: 4px;
+}
+
+.stats-card .stat-value.green {
+    color: #27ae60;
+}
+
+.stats-card .stat-value.orange {
+    color: #e67e22;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.chart-card {
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 16px;
+    background: white;
+}
+
+.chart-card h3 {
+    font-size: 0.95em;
+    margin: 0 0 12px 0;
+    color: var(--text-color);
+}
+
+.chart-card canvas {
+    max-height: 200px;
+    max-width: 100%;
+}
+
+.streak-display {
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 16px;
+    margin: 16px 0;
+    text-align: center;
+    background: linear-gradient(135deg, #fff5f5, #ffffff);
+}
+
+.streak-display .streak-title {
+    font-size: 0.9em;
+    color: var(--subtle-text-color);
+    margin-bottom: 8px;
+}
+
+.streak-display .streak-numbers {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+}
+
+.streak-display .streak-item {
+    text-align: center;
+}
+
+.streak-display .streak-item .number {
+    font-size: 2.2em;
+    font-weight: 700;
+    color: #e74c3c;
+}
+
+.streak-display .streak-item .label {
+    font-size: 0.75em;
+    color: var(--subtle-text-color);
+}
+
+.weekly-ranking {
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 16px;
+    margin: 16px 0;
+}
+
+.weekly-ranking h3 {
+    font-size: 0.95em;
+    margin: 0 0 12px 0;
+}
+
+.weekly-ranking table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.weekly-ranking th,
+.weekly-ranking td {
+    padding: 8px 6px;
+    text-align: left;
+    font-size: 0.85em;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.weekly-ranking th {
+    color: var(--subtle-text-color);
+    font-weight: 500;
+}
+
+.weekly-ranking .rank-bar {
+    height: 6px;
+    background-color: #eef1f5;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.weekly-ranking .rank-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), #6db3f2);
+    border-radius: 3px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 700px) {
+    .container {
+        max-width: 100%;
+        padding: 20px;
+        border-radius: 0;
+    }
+
+    .kanban-board {
+        grid-template-columns: 1fr;
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .nav-tab {
+        padding: 8px 10px;
+        font-size: 0.85em;
+    }
+
+    .nav-tabs {
+        gap: 2px;
+    }
+
+    .view-container {
+        max-height: 60vh;
+    }
+}
+
+/* ===== Scrollbar ===== */
+.view-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.view-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.view-container::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 3px;
+}
+
+main {
+    max-height: 55vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}

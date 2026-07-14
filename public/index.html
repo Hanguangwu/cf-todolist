@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%234a90e2'/%3E%3Cpath d='M30 55 l15 15 l30 -30' stroke='%23ffffff' stroke-width='12' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div id="login-screen">
+            <h1>欢迎回来</h1>
+            <p>请输入密钥以加载待办事项</p>
+            <input type="password" id="secret-key-input" placeholder="请输入密钥">
+            <button id="login-btn">登录</button>
+        </div>
+
+        <div id="todo-app" class="hidden">
+            <header>
+                <div class="user-info">
+                    <span id="user-email-display"></span>
+                    <button id="logout-btn">退出</button>
+                </div>
+                <h1>我的待办事项</h1>
+
+                <!-- Tab Navigation -->
+                <nav class="nav-tabs">
+                    <button class="nav-tab active" data-view="daily">📅 每日</button>
+                    <button class="nav-tab" data-view="weekly">📆 每周</button>
+                    <button class="nav-tab" data-view="monthly">📋 每月</button>
+                    <button class="nav-tab" data-view="kanban">📌 看板</button>
+                    <button class="nav-tab" data-view="analytics">📊 分析</button>
+                </nav>
+            </header>
+
+            <main class="view-container">
+                <!-- ===== Daily View ===== -->
+                <section id="view-daily" class="view-panel active">
+                    <div class="view-controls">
+                        <button class="ctrl-btn" id="daily-prev">‹</button>
+                        <span id="daily-date-label"></span>
+                        <button class="ctrl-btn" id="daily-next">›</button>
+                        <button class="ctrl-btn today-btn" id="daily-today">今天</button>
+                    </div>
+                    <form id="new-todo-form">
+                        <input type="text" id="new-todo-input" placeholder="需要做什么？" autocomplete="off">
+                        <select id="new-todo-type">
+                            <option value="daily">每日</option>
+                            <option value="weekly">每周</option>
+                            <option value="monthly">每月</option>
+                        </select>
+                        <button type="submit">+</button>
+                    </form>
+                    <div id="daily-progress" class="progress-bar-container">
+                        <div class="progress-bar-fill" id="daily-progress-fill"></div>
+                        <span class="progress-label" id="daily-progress-label">0%</span>
+                    </div>
+                    <ul id="todo-list"></ul>
+                    <p class="empty-hint" id="daily-empty">暂无任务</p>
+                </section>
+
+                <!-- ===== Weekly View ===== -->
+                <section id="view-weekly" class="view-panel">
+                    <div class="view-controls">
+                        <button class="ctrl-btn" id="weekly-prev">‹</button>
+                        <span id="weekly-date-label"></span>
+                        <button class="ctrl-btn" id="weekly-next">›</button>
+                        <button class="ctrl-btn today-btn" id="weekly-current">本周</button>
+                    </div>
+                    <div id="weekly-progress" class="progress-bar-container">
+                        <div class="progress-bar-fill" id="weekly-progress-fill"></div>
+                        <span class="progress-label" id="weekly-progress-label">0%</span>
+                    </div>
+                    <ul id="weekly-todo-list"></ul>
+                    <p class="empty-hint" id="weekly-empty">本周暂无任务</p>
+                </section>
+
+                <!-- ===== Monthly View ===== -->
+                <section id="view-monthly" class="view-panel">
+                    <div class="view-controls">
+                        <button class="ctrl-btn" id="monthly-prev">‹</button>
+                        <span id="monthly-date-label"></span>
+                        <button class="ctrl-btn" id="monthly-next">›</button>
+                        <button class="ctrl-btn today-btn" id="monthly-current">本月</button>
+                    </div>
+                    <div id="monthly-progress" class="progress-bar-container">
+                        <div class="progress-bar-fill" id="monthly-progress-fill"></div>
+                        <span class="progress-label" id="monthly-progress-label">0%</span>
+                    </div>
+                    <ul id="monthly-todo-list"></ul>
+                    <p class="empty-hint" id="monthly-empty">本月暂无任务</p>
+                </section>
+
+                <!-- ===== Kanban View ===== -->
+                <section id="view-kanban" class="view-panel">
+                    <div class="view-controls">
+                        <label class="year-label">
+                            <span id="kanban-year-label"></span>
+                            <button class="ctrl-btn" id="kanban-year-prev">‹</button>
+                            <button class="ctrl-btn" id="kanban-year-next">›</button>
+                        </label>
+                    </div>
+                    <div class="kanban-board">
+                        <div class="kanban-column" data-status="todo">
+                            <h3 class="kanban-column-header todo-header">📌 待办</h3>
+                            <div class="kanban-cards" id="kanban-todo"></div>
+                        </div>
+                        <div class="kanban-column" data-status="in_progress">
+                            <h3 class="kanban-column-header progress-header">🔄 进行中</h3>
+                            <div class="kanban-cards" id="kanban-in-progress"></div>
+                        </div>
+                        <div class="kanban-column" data-status="done">
+                            <h3 class="kanban-column-header done-header">✅ 已完成</h3>
+                            <div class="kanban-cards" id="kanban-done"></div>
+                        </div>
+                    </div>
+                    <p class="empty-hint" id="kanban-empty">暂无任务</p>
+                </section>
+
+                <!-- ===== Analytics View ===== -->
+                <section id="view-analytics" class="view-panel">
+                    <div class="view-controls">
+                        <button class="ctrl-btn" id="analytics-year-prev">‹</button>
+                        <span id="analytics-year-label"></span>
+                        <button class="ctrl-btn" id="analytics-year-next">›</button>
+                    </div>
+                    <div id="analytics-content">
+                        <div class="stats-cards" id="analytics-summary"></div>
+                        <div class="charts-grid">
+                            <div class="chart-card">
+                                <h3>月度趋势</h3>
+                                <canvas id="trend-chart"></canvas>
+                            </div>
+                            <div class="chart-card">
+                                <h3>任务类型分布</h3>
+                                <canvas id="type-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="streak-display" id="analytics-streak"></div>
+                        <div class="weekly-ranking" id="analytics-weekly-rank"></div>
+                    </div>
+                </section>
+            </main>
+
+            <footer>
+                <p>由 <a href="https://www.cloudflare.com/" target="_blank">Cloudflare</a> D1、KV、Pages强力驱动</p>
+            </footer>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

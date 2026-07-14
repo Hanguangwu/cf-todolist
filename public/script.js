@@ -115,9 +115,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const response = await fetch(`/api${endpoint}`, { ...options, headers });
             if (!response.ok) {
-                const error = await response.json();
-                alert(`错误: ${error.error}`);
-                throw new Error(error.error);
+                let errorMsg = '请求失败';
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.error || `HTTP ${response.status}`;
+                } catch (_) {
+                    try {
+                        const text = await response.text();
+                        errorMsg = text || `HTTP ${response.status}`;
+                    } catch (_) {
+                        errorMsg = `HTTP ${response.status}`;
+                    }
+                }
+                showError(errorMsg);
+                throw new Error(errorMsg);
             }
             if (response.status === 204) return;
             return response.json();
@@ -258,23 +269,46 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isLoggedIn) {
             loginScreen.classList.add('hidden');
             todoApp.classList.remove('hidden');
+            document.body.classList.add('logged-in');
             userEmailDisplay.textContent = '已登录';
             switchView('daily');
         } else {
             loginScreen.classList.remove('hidden');
             todoApp.classList.add('hidden');
+            document.body.classList.remove('logged-in');
             localStorage.removeItem('todo_token');
             Object.values(state.chartInstances).forEach(c => { if (c) c.destroy(); });
             state.chartInstances = {};
         }
     }
 
+    function showError(msg) {
+        const errEl = document.getElementById('login-error');
+        if (errEl) {
+            errEl.textContent = msg;
+            errEl.classList.add('visible');
+        } else {
+            alert(msg);
+        }
+    }
+
+    function clearError() {
+        const errEl = document.getElementById('login-error');
+        if (errEl) {
+            errEl.textContent = '';
+            errEl.classList.remove('visible');
+        }
+    }
+
     async function handleLogin() {
         const secretKey = secretKeyInput.value.trim();
         if (!secretKey) {
-            alert('请输入密钥。');
+            showError('请输入密钥');
             return;
         }
+        clearError();
+        loginBtn.disabled = true;
+        loginBtn.textContent = '登录中...';
         try {
             const data = await api.login(secretKey);
             localStorage.setItem('todo_token', data.token);
@@ -282,6 +316,9 @@ document.addEventListener('DOMContentLoaded', () => {
             setLoginView(true);
         } catch (error) {
             console.error('登录失败:', error);
+        } finally {
+            loginBtn.disabled = false;
+            loginBtn.textContent = '登录';
         }
     }
 

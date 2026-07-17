@@ -384,6 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderDailyTodos(todos) {
         const list = document.getElementById('daily-list');
+        if (!list) return;
         list.innerHTML = '';
         todos.sort((a, b) => (a.order || 0) - (b.order || 0) - (new Date(a.created_at) - new Date(b.created_at)));
 
@@ -392,7 +393,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         updateProgressBar('daily-progress-fill', 'daily-progress-label', 'daily-list');
-        document.getElementById('daily-empty').classList.toggle('visible', todos.length === 0);
+        const emptyHint = document.getElementById('daily-empty');
+        if (emptyHint) emptyHint.classList.toggle('visible', todos.length === 0);
     }
 
     function changeDate(delta) {
@@ -450,6 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderWeeklyTodos(todos) {
         const list = document.getElementById('weekly-list');
+        if (!list) return;
         list.innerHTML = '';
         todos.sort((a, b) => (a.order || 0) - (b.order || 0) - (new Date(a.created_at) - new Date(b.created_at)));
 
@@ -458,7 +461,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         updateProgressBar('weekly-progress-fill', 'weekly-progress-label', 'weekly-list');
-        document.getElementById('weekly-empty').classList.toggle('visible', todos.length === 0);
+        const emptyHint = document.getElementById('weekly-empty');
+        if (emptyHint) emptyHint.classList.toggle('visible', todos.length === 0);
     }
 
     function changeWeek(delta) {
@@ -533,6 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderMonthlyTodos(todos) {
         const list = document.getElementById('monthly-list');
+        if (!list) return;
         list.innerHTML = '';
         todos.sort((a, b) => (a.order || 0) - (b.order || 0) - (new Date(a.created_at) - new Date(b.created_at)));
 
@@ -541,7 +546,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         updateProgressBar('monthly-progress-fill', 'monthly-progress-label', 'monthly-list');
-        document.getElementById('monthly-empty').classList.toggle('visible', todos.length === 0);
+        const emptyHint = document.getElementById('monthly-empty');
+        if (emptyHint) emptyHint.classList.toggle('visible', todos.length === 0);
     }
 
     function changeMonth(delta) {

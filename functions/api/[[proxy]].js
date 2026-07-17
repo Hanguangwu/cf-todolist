@@ -244,6 +244,11 @@ router.get('/api/todos', async ({ request, env }) => {
 
     } else if (type === 'monthly' && url.searchParams.get('month')) {
         const month = url.searchParams.get('month');
+        sql = `SELECT ${baseColumns} FROM todos WHERE user_email = ? AND task_type = 'monthly' AND target_date = ? ORDER BY "order" ASC, created_at ASC`;
+        binds = [userEmail, month];
+
+    } else if (type === 'monthly_all' && url.searchParams.get('month')) {
+        const month = url.searchParams.get('month');
         const parts = month.split('-');
         const year = parseInt(parts[0]);
         const mon = parseInt(parts[1]);

@@ -601,7 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const [weekTodos, monthTodos] = await Promise.all([
                 api.getTodos({ type: 'weekly', week: weekStr, completed: '0' }),
-                api.getTodos({ type: 'monthly', month: monthStr, completed: '0' })
+                api.getTodos({ type: 'monthly_all', month: monthStr, completed: '0' })
             ]);
 
             renderOngoingWeekTodos(weekTodos);

@@ -67,13 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${y}-${m}-${d}`;
     }
 
-    function formatDateShort(date) {
-        const m = date.getMonth() + 1;
-        const d = date.getDate();
-        const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
-        return `${m}月${d}日 周${dayNames[date.getDay()]}`;
-    }
-
     function getTotalWeeksInYear(year) {
         const jan1 = new Date(year, 0, 1);
         const dow = jan1.getDay();
@@ -370,8 +363,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadDailyView() {
         const date = state.daily.date;
-        document.getElementById('daily-date-label').textContent = formatDateShort(new Date(date + 'T00:00:00'));
-        document.getElementById('daily-date-picker').value = date;
+        const picker = document.getElementById('daily-date-picker');
+        if (picker) picker.value = date;
 
         try {
             const todos = await api.getTodos({ type: 'daily', date });
@@ -400,12 +393,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function changeDate(delta) {
         const d = new Date(state.daily.date + 'T00:00:00');
         d.setDate(d.getDate() + delta);
-        state.daily.date = d.toISOString().slice(0, 10);
+        state.daily.date = formatDate(d);
         loadDailyView();
     }
 
     function goToToday() {
-        state.daily.date = new Date().toISOString().slice(0, 10);
+        const now = new Date();
+        state.daily.date = formatDate(now);
         loadDailyView();
     }
 
@@ -519,12 +513,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadMonthlyView() {
         const month = state.monthly.month;
-        const parts = month.split('-');
-        const y = parseInt(parts[0]);
-        const m = parseInt(parts[1]);
-        const label = `${y}年${m}月`;
-        document.getElementById('monthly-date-label').textContent = label;
-        document.getElementById('monthly-month-picker').value = month;
+        const picker = document.getElementById('monthly-month-picker');
+        if (picker) picker.value = month;
 
         try {
             const todos = await api.getTodos({ type: 'monthly', month });

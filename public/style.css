@@ -641,29 +641,40 @@ header h1 {
     user-select: none;
 }
 
-/* ===== Picker Overlays ===== */
-.picker-label-wrapper {
-    position: relative;
-    display: inline-block;
-    min-width: 120px;
+/* ===== Date/Month Inputs ===== */
+.date-text-input[type="date"],
+.date-text-input[type="month"] {
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.95em;
+    font-weight: 500;
+    color: var(--text);
     text-align: center;
+    min-width: 130px;
     cursor: pointer;
+    outline: none;
+    padding: 4px 2px;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: color var(--transition);
 }
 
-.picker-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
+.date-text-input[type="date"]:hover,
+.date-text-input[type="month"]:hover {
+    color: var(--primary);
+}
+
+.date-text-input[type="date"]::-webkit-calendar-picker-indicator,
+.date-text-input[type="month"]::-webkit-calendar-picker-indicator {
+    opacity: 0.35;
     cursor: pointer;
-    z-index: 1;
-    border: none;
-    padding: 0;
-    margin: 0;
-    box-sizing: border-box;
-    font-family: inherit;
+    transition: opacity var(--transition);
+}
+
+.date-text-input[type="date"]:hover::-webkit-calendar-picker-indicator,
+.date-text-input[type="month"]:hover::-webkit-calendar-picker-indicator {
+    opacity: 0.7;
 }
 
 .clickable-label {

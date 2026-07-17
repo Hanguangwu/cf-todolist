@@ -331,6 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadDailyView() {
         const date = state.daily.date;
         document.getElementById('daily-date-label').textContent = formatDateShort(new Date(date + 'T00:00:00'));
+        document.getElementById('daily-date-picker').value = date;
 
         try {
             const todos = await api.getTodos({ type: 'daily', date });
@@ -379,10 +380,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (taskType === 'daily') {
             targetDate = state.daily.date || now.toISOString().slice(0, 10);
         } else if (taskType === 'weekly') {
-            const wn = getWeekNumber(now);
-            targetDate = formatWeek(now.getFullYear(), wn);
+            targetDate = formatWeek(state.weekly.year, state.weekly.weekNum);
         } else if (taskType === 'monthly') {
-            targetDate = now.toISOString().slice(0, 7);
+            targetDate = state.monthly.month;
         }
 
         try {
@@ -470,6 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const m = parseInt(parts[1]);
         const label = `${y}年${m}月`;
         document.getElementById('monthly-date-label').textContent = label;
+        document.getElementById('monthly-month-picker').value = month;
 
         try {
             const todos = await api.getTodos({ type: 'monthly', month });
@@ -882,16 +883,60 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('daily-prev').addEventListener('click', () => changeDate(-1));
         document.getElementById('daily-next').addEventListener('click', () => changeDate(1));
         document.getElementById('daily-today').addEventListener('click', goToToday);
+        document.getElementById('daily-date-picker').addEventListener('change', function () {
+            if (this.value) {
+                state.daily.date = this.value;
+                loadDailyView();
+            }
+        });
 
         // Weekly controls
         document.getElementById('weekly-prev').addEventListener('click', () => changeWeek(-1));
         document.getElementById('weekly-next').addEventListener('click', () => changeWeek(1));
         document.getElementById('weekly-current').addEventListener('click', goToCurrentWeek);
 
+        const weeklyLabel = document.getElementById('weekly-date-label');
+        const weeklyEdit = document.getElementById('weekly-week-edit');
+        weeklyLabel.addEventListener('click', () => {
+            weeklyEdit.value = state.weekly.weekNum;
+            weeklyEdit.style.display = 'inline-block';
+            weeklyLabel.style.display = 'none';
+            weeklyEdit.focus();
+            weeklyEdit.select();
+        });
+        function commitWeekEdit() {
+            const val = parseInt(weeklyEdit.value);
+            if (!isNaN(val) && val >= 1) {
+                const totalWeeks = getTotalWeeksInYear(state.weekly.year);
+                if (val <= totalWeeks) {
+                    state.weekly.weekNum = val;
+                    loadWeeklyView();
+                }
+            }
+            weeklyEdit.style.display = 'none';
+            weeklyLabel.style.display = 'inline';
+        }
+        weeklyEdit.addEventListener('blur', commitWeekEdit);
+        weeklyEdit.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                weeklyEdit.blur();
+            } else if (e.key === 'Escape') {
+                weeklyEdit.style.display = 'none';
+                weeklyLabel.style.display = 'inline';
+            }
+        });
+
         // Monthly controls
         document.getElementById('monthly-prev').addEventListener('click', () => changeMonth(-1));
         document.getElementById('monthly-next').addEventListener('click', () => changeMonth(1));
         document.getElementById('monthly-current').addEventListener('click', goToCurrentMonth);
+        document.getElementById('monthly-month-picker').addEventListener('change', function () {
+            if (this.value) {
+                state.monthly.month = this.value;
+                loadMonthlyView();
+            }
+        });
 
         // Kanban controls
         document.getElementById('kanban-year-prev').addEventListener('click', () => changeKanbanYear(-1));

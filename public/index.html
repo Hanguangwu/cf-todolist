@@ -58,7 +58,10 @@
                 <section id="view-daily" class="view-panel active">
                     <div class="view-controls">
                         <button class="ctrl-btn" id="daily-prev">‹</button>
-                        <span id="daily-date-label"></span>
+                        <span class="picker-label-wrapper">
+                            <span id="daily-date-label"></span>
+                            <input type="date" id="daily-date-picker" class="picker-overlay">
+                        </span>
                         <button class="ctrl-btn" id="daily-next">›</button>
                         <button class="ctrl-btn today-btn" id="daily-today">今天</button>
                     </div>
@@ -83,7 +86,8 @@
                 <section id="view-weekly" class="view-panel">
                     <div class="view-controls">
                         <button class="ctrl-btn" id="weekly-prev">‹</button>
-                        <span id="weekly-date-label"></span>
+                        <span id="weekly-date-label" class="clickable-label"></span>
+                        <input type="number" id="weekly-week-edit" class="inline-edit-input" min="1" max="53" placeholder="周数">
                         <button class="ctrl-btn" id="weekly-next">›</button>
                         <button class="ctrl-btn today-btn" id="weekly-current">本周</button>
                     </div>
@@ -99,7 +103,10 @@
                 <section id="view-monthly" class="view-panel">
                     <div class="view-controls">
                         <button class="ctrl-btn" id="monthly-prev">‹</button>
-                        <span id="monthly-date-label"></span>
+                        <span class="picker-label-wrapper">
+                            <span id="monthly-date-label"></span>
+                            <input type="month" id="monthly-month-picker" class="picker-overlay">
+                        </span>
                         <button class="ctrl-btn" id="monthly-next">›</button>
                         <button class="ctrl-btn today-btn" id="monthly-current">本月</button>
                     </div>

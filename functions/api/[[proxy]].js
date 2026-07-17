@@ -219,6 +219,7 @@ router.get('/api/todos', async ({ request, env }) => {
 
     const url = new URL(request.url);
     const type = url.searchParams.get('type') || 'all';
+    const completedFilter = url.searchParams.get('completed');
     const baseColumns = 'id, content, completed, task_type, target_date, status, "order", created_at';
 
     let sql, binds;
@@ -265,7 +266,11 @@ router.get('/api/todos', async ({ request, env }) => {
         binds = [userEmail];
     }
 
-    const { results } = await env.DB.prepare(sql).bind(...binds).all();
+    let { results } = await env.DB.prepare(sql).bind(...binds).all();
+    if (completedFilter !== null) {
+        const compVal = parseInt(completedFilter);
+        results = results.filter(t => t.completed === compVal);
+    }
     return jsonResponse(results);
 });
 

@@ -43,17 +43,17 @@
                 </div>
                 <h1>我的待办事项</h1>
 
-                <!-- Tab Navigation -->
                 <nav class="nav-tabs">
                     <button class="nav-tab active" data-view="daily">📅 每日</button>
                     <button class="nav-tab" data-view="weekly">📆 每周</button>
                     <button class="nav-tab" data-view="monthly">📋 每月</button>
-                    <button class="nav-tab" data-view="kanban">📌 看板</button>
+                    <button class="nav-tab" data-view="ongoing">🔄 进行中</button>
                     <button class="nav-tab" data-view="analytics">📊 分析</button>
                 </nav>
             </header>
 
             <main class="view-container">
+
                 <!-- ===== Daily View ===== -->
                 <section id="view-daily" class="view-panel active">
                     <div class="view-controls">
@@ -65,21 +65,16 @@
                         <button class="ctrl-btn" id="daily-next">›</button>
                         <button class="ctrl-btn today-btn" id="daily-today">今天</button>
                     </div>
-                    <form id="new-todo-form">
-                        <input type="text" id="new-todo-input" placeholder="需要做什么？" autocomplete="off">
-                        <select id="new-todo-type">
-                            <option value="daily">每日</option>
-                            <option value="weekly">每周</option>
-                            <option value="monthly">每月</option>
-                        </select>
-                        <button type="submit">+</button>
+                    <form id="daily-form" class="add-form">
+                        <input type="text" id="daily-input" class="add-input" placeholder="今日需要做什么？" autocomplete="off">
+                        <button type="submit" class="add-btn">添加</button>
                     </form>
-                    <div id="daily-progress" class="progress-bar-container">
+                    <div class="progress-bar-container">
                         <div class="progress-bar-fill" id="daily-progress-fill"></div>
                         <span class="progress-label" id="daily-progress-label">0%</span>
                     </div>
-                    <ul id="todo-list"></ul>
-                    <p class="empty-hint" id="daily-empty">暂无任务</p>
+                    <ul id="daily-list" class="todo-list"></ul>
+                    <p class="empty-hint" id="daily-empty">今日暂无任务</p>
                 </section>
 
                 <!-- ===== Weekly View ===== -->
@@ -91,11 +86,15 @@
                         <button class="ctrl-btn" id="weekly-next">›</button>
                         <button class="ctrl-btn today-btn" id="weekly-current">本周</button>
                     </div>
-                    <div id="weekly-progress" class="progress-bar-container">
+                    <form id="weekly-form" class="add-form">
+                        <input type="text" id="weekly-input" class="add-input" placeholder="本周需要做什么？" autocomplete="off">
+                        <button type="submit" class="add-btn">添加</button>
+                    </form>
+                    <div class="progress-bar-container">
                         <div class="progress-bar-fill" id="weekly-progress-fill"></div>
                         <span class="progress-label" id="weekly-progress-label">0%</span>
                     </div>
-                    <ul id="weekly-todo-list"></ul>
+                    <ul id="weekly-list" class="todo-list"></ul>
                     <p class="empty-hint" id="weekly-empty">本周暂无任务</p>
                 </section>
 
@@ -110,38 +109,51 @@
                         <button class="ctrl-btn" id="monthly-next">›</button>
                         <button class="ctrl-btn today-btn" id="monthly-current">本月</button>
                     </div>
-                    <div id="monthly-progress" class="progress-bar-container">
+                    <form id="monthly-form" class="add-form">
+                        <input type="text" id="monthly-input" class="add-input" placeholder="本月需要做什么？" autocomplete="off">
+                        <button type="submit" class="add-btn">添加</button>
+                    </form>
+                    <div class="progress-bar-container">
                         <div class="progress-bar-fill" id="monthly-progress-fill"></div>
                         <span class="progress-label" id="monthly-progress-label">0%</span>
                     </div>
-                    <ul id="monthly-todo-list"></ul>
+                    <ul id="monthly-list" class="todo-list"></ul>
                     <p class="empty-hint" id="monthly-empty">本月暂无任务</p>
                 </section>
 
-                <!-- ===== Kanban View ===== -->
-                <section id="view-kanban" class="view-panel">
+                <!-- ===== Ongoing View ===== -->
+                <section id="view-ongoing" class="view-panel">
                     <div class="view-controls">
-                        <label class="year-label">
-                            <span id="kanban-year-label"></span>
-                            <button class="ctrl-btn" id="kanban-year-prev">‹</button>
-                            <button class="ctrl-btn" id="kanban-year-next">›</button>
-                        </label>
+                        <button class="ctrl-btn" id="ongoing-week-prev">‹</button>
+                        <span id="ongoing-week-label"></span>
+                        <button class="ctrl-btn" id="ongoing-week-next">›</button>
+                        <button class="ctrl-btn today-btn" id="ongoing-this-week">本周</button>
+                        <span class="ctrl-divider">|</span>
+                        <button class="ctrl-btn" id="ongoing-month-prev">‹</button>
+                        <span id="ongoing-month-label"></span>
+                        <button class="ctrl-btn" id="ongoing-month-next">›</button>
+                        <button class="ctrl-btn today-btn" id="ongoing-this-month">本月</button>
                     </div>
-                    <div class="kanban-board">
-                        <div class="kanban-column" data-status="todo">
-                            <h3 class="kanban-column-header todo-header">📌 待办</h3>
-                            <div class="kanban-cards" id="kanban-todo"></div>
+                    <div id="ongoing-content">
+                        <div class="ongoing-section">
+                            <div class="ongoing-section-header">
+                                <span class="ongoing-section-icon">📅</span>
+                                <span class="ongoing-section-title">本周待办</span>
+                                <span id="ongoing-week-range" class="ongoing-section-range"></span>
+                            </div>
+                            <ul id="ongoing-week-list" class="todo-list"></ul>
+                            <p class="empty-hint" id="ongoing-week-empty">本周暂无待办</p>
                         </div>
-                        <div class="kanban-column" data-status="in_progress">
-                            <h3 class="kanban-column-header progress-header">🔄 进行中</h3>
-                            <div class="kanban-cards" id="kanban-in-progress"></div>
-                        </div>
-                        <div class="kanban-column" data-status="done">
-                            <h3 class="kanban-column-header done-header">✅ 已完成</h3>
-                            <div class="kanban-cards" id="kanban-done"></div>
+                        <div class="ongoing-section">
+                            <div class="ongoing-section-header">
+                                <span class="ongoing-section-icon">📋</span>
+                                <span class="ongoing-section-title">本月待办</span>
+                                <span id="ongoing-month-range" class="ongoing-section-range"></span>
+                            </div>
+                            <ul id="ongoing-month-list" class="todo-list"></ul>
+                            <p class="empty-hint" id="ongoing-month-empty">本月暂无待办</p>
                         </div>
                     </div>
-                    <p class="empty-hint" id="kanban-empty">暂无任务</p>
                 </section>
 
                 <!-- ===== Analytics View ===== -->
@@ -167,6 +179,7 @@
                         <div class="weekly-ranking" id="analytics-weekly-rank"></div>
                     </div>
                 </section>
+
             </main>
 
             <footer>

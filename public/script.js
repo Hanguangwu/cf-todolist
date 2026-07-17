@@ -6,21 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginBtn = document.getElementById('login-btn');
     const userEmailDisplay = document.getElementById('user-email-display');
     const logoutBtn = document.getElementById('logout-btn');
-    const newTodoForm = document.getElementById('new-todo-form');
-    const newTodoInput = document.getElementById('new-todo-input');
-    const newTodoType = document.getElementById('new-todo-type');
-    const todoList = document.getElementById('todo-list');
-
-    // --- State ---
-    const state = {
-        currentView: 'daily',
-        daily: { date: new Date().toISOString().slice(0, 10) },
-        weekly: getCurrentWeekInfo(),
-        monthly: { month: new Date().toISOString().slice(0, 7) },
-        kanban: { year: new Date().getFullYear() },
-        analytics: { year: new Date().getFullYear() },
-        chartInstances: {}
-    };
 
     // --- Week Calculation Utilities ---
 
@@ -101,6 +86,20 @@ document.addEventListener('DOMContentLoaded', () => {
         return new Date(year, month, 0).getDate();
     }
 
+    // --- State ---
+    const state = {
+        currentView: 'daily',
+        daily: { date: new Date().toISOString().slice(0, 10) },
+        weekly: getCurrentWeekInfo(),
+        monthly: { month: new Date().toISOString().slice(0, 7) },
+        ongoing: {
+            week: getCurrentWeekInfo(),
+            month: new Date().toISOString().slice(0, 7)
+        },
+        analytics: { year: new Date().getFullYear() },
+        chartInstances: {}
+    };
+
     // --- API Abstraction ---
 
     const api = {
@@ -160,20 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         },
 
-        updateTodoStatus(id, status) {
-            return this.request(`/todos/${id}/status`, {
-                method: 'PUT',
-                body: JSON.stringify({ status }),
-            });
-        },
-
-        reorderTodo(id, data) {
-            return this.request(`/todos/${id}/reorder`, {
-                method: 'PUT',
-                body: JSON.stringify(data),
-            });
-        },
-
         deleteTodo(id) {
             return this.request(`/todos/${id}`, {
                 method: 'DELETE',
@@ -202,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
             daily: loadDailyView,
             weekly: loadWeeklyView,
             monthly: loadMonthlyView,
-            kanban: loadKanbanView,
+            ongoing: loadOngoingView,
             analytics: loadAnalyticsView,
         };
         if (loaders[viewName]) loaders[viewName]();
@@ -222,48 +207,37 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function createTaskTypeBadge(type) {
-        const badge = document.createElement('span');
-        badge.className = 'task-type-badge ' + type;
-        const labels = { daily: '每日', weekly: '每周', monthly: '每月' };
-        badge.textContent = labels[type] || type;
-        return badge;
-    }
-
-    function createTodoListItem(todo, { showType = true, onToggle, onDelete } = {}) {
+    function createTodoListItem(todo) {
         const li = document.createElement('li');
         li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
         li.dataset.id = todo.id;
+
+        const checkbox = document.createElement('div');
+        checkbox.className = 'checkbox';
 
         const contentSpan = document.createElement('span');
         contentSpan.className = 'content';
         contentSpan.textContent = todo.content;
 
-        li.innerHTML = '<div class="checkbox"></div>';
-        li.appendChild(contentSpan);
-
-        if (showType && todo.task_type && todo.task_type !== 'daily') {
-            li.appendChild(createTaskTypeBadge(todo.task_type));
-        }
-
         const delBtn = document.createElement('button');
         delBtn.className = 'delete-btn';
         delBtn.textContent = '×';
+
+        li.appendChild(checkbox);
+        li.appendChild(contentSpan);
         li.appendChild(delBtn);
 
-        const checkbox = li.querySelector('.checkbox');
         checkbox.addEventListener('click', () => {
-            const newState = !todo.completed;
-            (onToggle || toggleTodoCompletion)(todo.id, newState, li);
+            toggleTodoCompletion(todo.id, li);
         });
         delBtn.addEventListener('click', () => {
-            (onDelete || deleteTodoItem)(todo.id, li);
+            deleteTodoItem(todo.id, li);
         });
 
         return li;
     }
 
-    // --- Auth & Login (unchanged logic) ---
+    // --- Auth & Login ---
 
     function setLoginView(isLoggedIn) {
         if (isLoggedIn) {
@@ -326,6 +300,72 @@ document.addEventListener('DOMContentLoaded', () => {
         setLoginView(false);
     }
 
+    // --- Completion Toggle (fixed) ---
+
+    async function toggleTodoCompletion(id, li) {
+        const isCompleted = li.classList.contains('completed');
+        const newState = !isCompleted;
+        try {
+            await api.updateTodo(id, newState ? 1 : 0);
+            li.classList.toggle('completed', newState);
+            updateProgressBarForCurrentView();
+        } catch (error) {
+            console.error('更新 todo 失败:', error);
+        }
+    }
+
+    function updateProgressBarForCurrentView() {
+        const view = state.currentView;
+        if (view === 'daily') {
+            updateProgressBar('daily-progress-fill', 'daily-progress-label', 'daily-list');
+        } else if (view === 'weekly') {
+            updateProgressBar('weekly-progress-fill', 'weekly-progress-label', 'weekly-list');
+        } else if (view === 'monthly') {
+            updateProgressBar('monthly-progress-fill', 'monthly-progress-label', 'monthly-list');
+        }
+    }
+
+    async function deleteTodoItem(id, li) {
+        if (!confirm('确定要删除这项待办吗？')) return;
+        try {
+            await api.deleteTodo(id);
+            li.remove();
+            updateProgressBarForCurrentView();
+            updateEmptyHintForCurrentView();
+        } catch (error) {
+            console.error('删除 todo 失败:', error);
+        }
+    }
+
+    function updateProgressBar(fillId, labelId, listId) {
+        const fill = document.getElementById(fillId);
+        const label = document.getElementById(labelId);
+        const list = document.getElementById(listId);
+        if (!fill || !label || !list) return;
+        const items = list.querySelectorAll('.todo-item');
+        const total = items.length;
+        const completed = list.querySelectorAll('.todo-item.completed').length;
+        const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+        fill.style.width = pct + '%';
+        label.textContent = total > 0 ? `${completed}/${total} (${pct}%)` : '0%';
+    }
+
+    function updateEmptyHintForCurrentView() {
+        const view = state.currentView;
+        const map = {
+            daily: { list: 'daily-list', empty: 'daily-empty' },
+            weekly: { list: 'weekly-list', empty: 'weekly-empty' },
+            monthly: { list: 'monthly-list', empty: 'monthly-empty' },
+        };
+        const cfg = map[view];
+        if (!cfg) return;
+        const list = document.getElementById(cfg.list);
+        const hint = document.getElementById(cfg.empty);
+        if (list && hint) {
+            hint.classList.toggle('visible', list.children.length === 0);
+        }
+    }
+
     // --- Daily View ---
 
     async function loadDailyView() {
@@ -343,16 +383,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderDailyTodos(todos) {
-        todoList.innerHTML = '';
+        const list = document.getElementById('daily-list');
+        list.innerHTML = '';
         todos.sort((a, b) => (a.order || 0) - (b.order || 0) - (new Date(a.created_at) - new Date(b.created_at)));
 
-        let completedCount = 0;
         todos.forEach(todo => {
-            todoList.appendChild(createTodoListItem(todo, { showType: true }));
-            if (todo.completed) completedCount++;
+            list.appendChild(createTodoListItem(todo));
         });
 
-        updateProgressBar('daily-progress-fill', 'daily-progress-label', completedCount, todos.length);
+        updateProgressBar('daily-progress-fill', 'daily-progress-label', 'daily-list');
         document.getElementById('daily-empty').classList.toggle('visible', todos.length === 0);
     }
 
@@ -368,38 +407,26 @@ document.addEventListener('DOMContentLoaded', () => {
         loadDailyView();
     }
 
-    async function handleAddTodo(e) {
+    async function handleDailyAdd(e) {
         e.preventDefault();
-        const content = newTodoInput.value.trim();
+        const input = document.getElementById('daily-input');
+        const content = input.value.trim();
         if (!content) return;
-
-        const taskType = newTodoType.value;
-        let targetDate;
-        const now = new Date();
-
-        if (taskType === 'daily') {
-            targetDate = state.daily.date || now.toISOString().slice(0, 10);
-        } else if (taskType === 'weekly') {
-            targetDate = formatWeek(state.weekly.year, state.weekly.weekNum);
-        } else if (taskType === 'monthly') {
-            targetDate = state.monthly.month;
-        }
 
         try {
             const newTodo = await api.createTodo({
                 content,
-                task_type: taskType,
-                target_date: targetDate,
+                task_type: 'daily',
+                target_date: state.daily.date,
                 status: 'todo'
             });
-            if (state.currentView === 'daily') {
-                todoList.appendChild(createTodoListItem(newTodo, { showType: true }));
-                document.getElementById('daily-empty').classList.remove('visible');
-                updateProgressBar('daily-progress-fill', 'daily-progress-label', 0, todoList.children.length);
-            }
-            newTodoInput.value = '';
+            const list = document.getElementById('daily-list');
+            list.appendChild(createTodoListItem(newTodo));
+            document.getElementById('daily-empty').classList.remove('visible');
+            updateProgressBar('daily-progress-fill', 'daily-progress-label', 'daily-list');
+            input.value = '';
         } catch (error) {
-            console.error('创建 todo 失败:', error);
+            console.error('创建每日任务失败:', error);
         }
     }
 
@@ -422,17 +449,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderWeeklyTodos(todos) {
-        const list = document.getElementById('weekly-todo-list');
+        const list = document.getElementById('weekly-list');
         list.innerHTML = '';
         todos.sort((a, b) => (a.order || 0) - (b.order || 0) - (new Date(a.created_at) - new Date(b.created_at)));
 
-        let completedCount = 0;
         todos.forEach(todo => {
-            list.appendChild(createTodoListItem(todo, { showType: true }));
-            if (todo.completed) completedCount++;
+            list.appendChild(createTodoListItem(todo));
         });
 
-        updateProgressBar('weekly-progress-fill', 'weekly-progress-label', completedCount, todos.length);
+        updateProgressBar('weekly-progress-fill', 'weekly-progress-label', 'weekly-list');
         document.getElementById('weekly-empty').classList.toggle('visible', todos.length === 0);
     }
 
@@ -461,6 +486,31 @@ document.addEventListener('DOMContentLoaded', () => {
         loadWeeklyView();
     }
 
+    async function handleWeeklyAdd(e) {
+        e.preventDefault();
+        const input = document.getElementById('weekly-input');
+        const content = input.value.trim();
+        if (!content) return;
+
+        const targetDate = formatWeek(state.weekly.year, state.weekly.weekNum);
+
+        try {
+            const newTodo = await api.createTodo({
+                content,
+                task_type: 'weekly',
+                target_date: targetDate,
+                status: 'todo'
+            });
+            const list = document.getElementById('weekly-list');
+            list.appendChild(createTodoListItem(newTodo));
+            document.getElementById('weekly-empty').classList.remove('visible');
+            updateProgressBar('weekly-progress-fill', 'weekly-progress-label', 'weekly-list');
+            input.value = '';
+        } catch (error) {
+            console.error('创建每周任务失败:', error);
+        }
+    }
+
     // --- Monthly View ---
 
     async function loadMonthlyView() {
@@ -482,17 +532,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderMonthlyTodos(todos) {
-        const list = document.getElementById('monthly-todo-list');
+        const list = document.getElementById('monthly-list');
         list.innerHTML = '';
         todos.sort((a, b) => (a.order || 0) - (b.order || 0) - (new Date(a.created_at) - new Date(b.created_at)));
 
-        let completedCount = 0;
         todos.forEach(todo => {
-            list.appendChild(createTodoListItem(todo, { showType: true }));
-            if (todo.completed) completedCount++;
+            list.appendChild(createTodoListItem(todo));
         });
 
-        updateProgressBar('monthly-progress-fill', 'monthly-progress-label', completedCount, todos.length);
+        updateProgressBar('monthly-progress-fill', 'monthly-progress-label', 'monthly-list');
         document.getElementById('monthly-empty').classList.toggle('visible', todos.length === 0);
     }
 
@@ -512,133 +560,140 @@ document.addEventListener('DOMContentLoaded', () => {
         loadMonthlyView();
     }
 
-    // --- Kanban View ---
-
-    async function loadKanbanView() {
-        const year = state.kanban.year;
-        document.getElementById('kanban-year-label').textContent = `${year}年`;
+    async function handleMonthlyAdd(e) {
+        e.preventDefault();
+        const input = document.getElementById('monthly-input');
+        const content = input.value.trim();
+        if (!content) return;
 
         try {
-            const todos = await api.getTodos({ type: 'kanban', year: String(year) });
-            renderKanban(todos);
+            const newTodo = await api.createTodo({
+                content,
+                task_type: 'monthly',
+                target_date: state.monthly.month,
+                status: 'todo'
+            });
+            const list = document.getElementById('monthly-list');
+            list.appendChild(createTodoListItem(newTodo));
+            document.getElementById('monthly-empty').classList.remove('visible');
+            updateProgressBar('monthly-progress-fill', 'monthly-progress-label', 'monthly-list');
+            input.value = '';
         } catch (error) {
-            console.error('加载看板失败:', error);
+            console.error('创建每月任务失败:', error);
+        }
+    }
+
+    // --- Ongoing View ---
+
+    async function loadOngoingView() {
+        const { year, weekNum } = state.ongoing.week;
+        const range = getWeekDateRange(year, weekNum);
+        const weekStr = formatWeek(year, weekNum);
+        const monthStr = state.ongoing.month;
+
+        const weekLabel = `${year}年 第${weekNum}周`;
+        document.getElementById('ongoing-week-label').textContent = weekLabel;
+        document.getElementById('ongoing-week-range').textContent =
+            `${formatDate(range.start)} - ${formatDate(range.end)}`;
+
+        const monthParts = monthStr.split('-');
+        document.getElementById('ongoing-month-label').textContent = `${monthParts[0]}年${monthParts[1]}月`;
+        const lastDay = getLastDayOfMonth(parseInt(monthParts[0]), parseInt(monthParts[1]));
+        document.getElementById('ongoing-month-range').textContent =
+            `${monthStr}-01 ~ ${monthStr}-${String(lastDay).padStart(2, '0')}`;
+
+        try {
+            const [weekTodos, monthTodos] = await Promise.all([
+                api.getTodos({ type: 'weekly', week: weekStr, completed: '0' }),
+                api.getTodos({ type: 'monthly', month: monthStr, completed: '0' })
+            ]);
+
+            renderOngoingWeekTodos(weekTodos);
+            renderOngoingMonthTodos(monthTodos);
+        } catch (error) {
+            console.error('加载进行中任务失败:', error);
             if (error.message && error.message.includes('认证失败')) handleLogout();
         }
     }
 
-    function renderKanban(todos) {
-        const columns = {
-            todo: document.getElementById('kanban-todo'),
-            in_progress: document.getElementById('kanban-in-progress'),
-            done: document.getElementById('kanban-done'),
-        };
+    function renderOngoingWeekTodos(todos) {
+        const list = document.getElementById('ongoing-week-list');
+        list.innerHTML = '';
+        todos.sort((a, b) => (a.order || 0) - (b.order || 0) - (new Date(a.created_at) - new Date(b.created_at)));
 
-        Object.values(columns).forEach(el => el.innerHTML = '');
-
-        const grouped = { todo: [], in_progress: [], done: [] };
-        todos.forEach(t => {
-            const status = t.status || 'todo';
-            if (grouped[status]) grouped[status].push(t);
-            else grouped.todo.push(t);
+        const seen = new Set();
+        todos.forEach(todo => {
+            if (seen.has(todo.id)) return;
+            seen.add(todo.id);
+            const li = createTodoListItem(todo);
+            if (todo.task_type && todo.task_type !== 'daily') {
+                const badge = document.createElement('span');
+                badge.className = 'task-type-badge ' + todo.task_type;
+                const labels = { weekly: '每周', monthly: '每月' };
+                badge.textContent = labels[todo.task_type] || todo.task_type;
+                li.querySelector('.content').after(badge);
+            }
+            list.appendChild(li);
         });
 
-        let totalCount = 0;
-        Object.keys(grouped).forEach(status => {
-            grouped[status].sort((a, b) => (a.order || 0) - (b.order || 0));
-            grouped[status].forEach(todo => {
-                const card = createKanbanCard(todo);
-                columns[status].appendChild(card);
-                totalCount++;
-            });
-        });
-
-        document.getElementById('kanban-empty').classList.toggle('visible', totalCount === 0);
+        document.getElementById('ongoing-week-empty').classList.toggle('visible', list.children.length === 0);
     }
 
-    function createKanbanCard(todo) {
-        const card = document.createElement('div');
-        card.className = 'kanban-card';
-        card.draggable = true;
-        card.dataset.id = todo.id;
-        card.dataset.status = todo.status || 'todo';
+    function renderOngoingMonthTodos(todos) {
+        const list = document.getElementById('ongoing-month-list');
+        list.innerHTML = '';
+        todos.sort((a, b) => (a.order || 0) - (b.order || 0) - (new Date(a.created_at) - new Date(b.created_at)));
 
-        const content = document.createElement('div');
-        content.className = 'card-content';
-        content.textContent = todo.content;
-        card.appendChild(content);
-
-        const meta = document.createElement('div');
-        meta.className = 'card-meta';
-        if (todo.task_type && todo.task_type !== 'daily') {
-            meta.appendChild(createTaskTypeBadge(todo.task_type));
-        }
-
-        const dateSpan = document.createElement('span');
-        dateSpan.style.color = '#aaa';
-        dateSpan.style.fontSize = '0.75em';
-        if (todo.target_date) {
-            dateSpan.textContent = todo.target_date;
-        }
-        meta.appendChild(dateSpan);
-        card.appendChild(meta);
-
-        // Drag events
-        card.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', JSON.stringify({
-                id: todo.id,
-                sourceStatus: todo.status || 'todo'
-            }));
-            card.classList.add('dragging');
-        });
-        card.addEventListener('dragend', () => {
-            card.classList.remove('dragging');
-            document.querySelectorAll('.kanban-column').forEach(col => {
-                col.classList.remove('drag-over');
-            });
+        const seen = new Set();
+        todos.forEach(todo => {
+            if (seen.has(todo.id)) return;
+            seen.add(todo.id);
+            const li = createTodoListItem(todo);
+            if (todo.task_type !== 'monthly') {
+                const badge = document.createElement('span');
+                badge.className = 'task-type-badge ' + todo.task_type;
+                const labels = { daily: '每日', weekly: '每周' };
+                badge.textContent = labels[todo.task_type] || todo.task_type;
+                li.querySelector('.content').after(badge);
+            }
+            list.appendChild(li);
         });
 
-        return card;
+        document.getElementById('ongoing-month-empty').classList.toggle('visible', list.children.length === 0);
     }
 
-    function setupKanbanDropZones() {
-        document.querySelectorAll('.kanban-column').forEach(column => {
-            column.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                column.classList.add('drag-over');
-            });
-            column.addEventListener('dragleave', () => {
-                column.classList.remove('drag-over');
-            });
-            column.addEventListener('drop', async (e) => {
-                e.preventDefault();
-                column.classList.remove('drag-over');
-
-                const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-                const newStatus = column.dataset.status;
-                if (data.sourceStatus === newStatus) {
-                    const card = document.querySelector(`.kanban-card[data-id="${data.id}"]`);
-                    if (card && card.parentElement) return;
-                }
-
-                try {
-                    await api.updateTodoStatus(data.id, newStatus);
-                    const card = document.querySelector(`.kanban-card[data-id="${data.id}"]`);
-                    if (card) {
-                        card.dataset.status = newStatus;
-                        const targetContainer = column.querySelector('.kanban-cards');
-                        targetContainer.appendChild(card);
-                    }
-                } catch (error) {
-                    console.error('更新看板状态失败:', error);
-                }
-            });
-        });
+    function changeOngoingWeek(delta) {
+        const totalWeeks = getTotalWeeksInYear(state.ongoing.week.year);
+        let newWeek = state.ongoing.week.weekNum + delta;
+        let newYear = state.ongoing.week.year;
+        if (newWeek < 1) { newYear--; newWeek = getTotalWeeksInYear(newYear); }
+        else if (newWeek > totalWeeks) { newYear++; newWeek = 1; }
+        state.ongoing.week.year = newYear;
+        state.ongoing.week.weekNum = newWeek;
+        loadOngoingView();
     }
 
-    function changeKanbanYear(delta) {
-        state.kanban.year += delta;
-        loadKanbanView();
+    function goToOngoingThisWeek() {
+        const now = new Date();
+        state.ongoing.week.year = now.getFullYear();
+        state.ongoing.week.weekNum = getWeekNumber(now);
+        loadOngoingView();
+    }
+
+    function changeOngoingMonth(delta) {
+        const parts = state.ongoing.month.split('-');
+        let y = parseInt(parts[0]);
+        let m = parseInt(parts[1]);
+        m += delta;
+        if (m < 1) { m = 12; y--; }
+        if (m > 12) { m = 1; y++; }
+        state.ongoing.month = `${y}-${String(m).padStart(2, '0')}`;
+        loadOngoingView();
+    }
+
+    function goToOngoingThisMonth() {
+        state.ongoing.month = new Date().toISOString().slice(0, 7);
+        loadOngoingView();
     }
 
     // --- Analytics View ---
@@ -657,7 +712,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderAnalytics(data) {
-        // Summary cards
         const summaryHtml = `
             <div class="stats-card">
                 <div class="stat-value">${data.summary.total_tasks}</div>
@@ -674,7 +728,6 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         document.getElementById('analytics-summary').innerHTML = summaryHtml;
 
-        // Streak display
         const streakHtml = `
             <div class="streak-title">🔥 连续完成</div>
             <div class="streak-numbers">
@@ -690,7 +743,6 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         document.getElementById('analytics-streak').innerHTML = streakHtml;
 
-        // Weekly ranking
         const rankingHtml = `
             <h3>📅 周完成率排行</h3>
             <table>
@@ -714,7 +766,6 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         document.getElementById('analytics-weekly-rank').innerHTML = rankingHtml;
 
-        // Charts
         renderTrendChart(data);
         renderTypeChart(data);
     }
@@ -823,63 +874,19 @@ document.addEventListener('DOMContentLoaded', () => {
         loadAnalyticsView();
     }
 
-    // --- Shared Actions ---
-
-    async function toggleTodoCompletion(id, completed, li) {
-        try {
-            await api.updateTodo(id, completed);
-            li.classList.toggle('completed', completed);
-            const checkbox = li.querySelector('.checkbox');
-            const newState = !completed;
-            checkbox.onclick = () => toggleTodoCompletion(id, newState, li);
-            // Refresh progress in current view
-            if (state.currentView === 'daily') loadDailyView();
-            else if (state.currentView === 'weekly') loadWeeklyView();
-            else if (state.currentView === 'monthly') loadMonthlyView();
-        } catch (error) {
-            console.error('更新 todo 失败:', error);
-        }
-    }
-
-    async function deleteTodoItem(id, li) {
-        if (!confirm('确定要删除这项待办吗？')) return;
-        try {
-            await api.deleteTodo(id);
-            li.remove();
-            if (state.currentView === 'daily') loadDailyView();
-            else if (state.currentView === 'weekly') loadWeeklyView();
-            else if (state.currentView === 'monthly') loadMonthlyView();
-            else if (state.currentView === 'kanban') loadKanbanView();
-        } catch (error) {
-            console.error('删除 todo 失败:', error);
-        }
-    }
-
-    function updateProgressBar(fillId, labelId, completed, total) {
-        const fill = document.getElementById(fillId);
-        const label = document.getElementById(labelId);
-        if (!fill || !label) return;
-        const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-        fill.style.width = pct + '%';
-        label.textContent = total > 0 ? `${completed}/${total} (${pct}%)` : '0%';
-    }
-
     // --- Event Binding ---
 
     function init() {
-        // Login
         loginBtn.addEventListener('click', handleLogin);
         secretKeyInput.addEventListener('keyup', (e) => {
             if (e.key === 'Enter') handleLogin();
         });
         logoutBtn.addEventListener('click', handleLogout);
 
-        // Tab clicks
         document.querySelectorAll('.nav-tab').forEach(tab => {
             tab.addEventListener('click', () => switchView(tab.dataset.view));
         });
 
-        // Daily controls
         document.getElementById('daily-prev').addEventListener('click', () => changeDate(-1));
         document.getElementById('daily-next').addEventListener('click', () => changeDate(1));
         document.getElementById('daily-today').addEventListener('click', goToToday);
@@ -889,8 +896,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadDailyView();
             }
         });
+        document.getElementById('daily-form').addEventListener('submit', handleDailyAdd);
 
-        // Weekly controls
         document.getElementById('weekly-prev').addEventListener('click', () => changeWeek(-1));
         document.getElementById('weekly-next').addEventListener('click', () => changeWeek(1));
         document.getElementById('weekly-current').addEventListener('click', goToCurrentWeek);
@@ -926,8 +933,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 weeklyLabel.style.display = 'inline';
             }
         });
+        document.getElementById('weekly-form').addEventListener('submit', handleWeeklyAdd);
 
-        // Monthly controls
         document.getElementById('monthly-prev').addEventListener('click', () => changeMonth(-1));
         document.getElementById('monthly-next').addEventListener('click', () => changeMonth(1));
         document.getElementById('monthly-current').addEventListener('click', goToCurrentMonth);
@@ -937,22 +944,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadMonthlyView();
             }
         });
+        document.getElementById('monthly-form').addEventListener('submit', handleMonthlyAdd);
 
-        // Kanban controls
-        document.getElementById('kanban-year-prev').addEventListener('click', () => changeKanbanYear(-1));
-        document.getElementById('kanban-year-next').addEventListener('click', () => changeKanbanYear(1));
+        document.getElementById('ongoing-week-prev').addEventListener('click', () => changeOngoingWeek(-1));
+        document.getElementById('ongoing-week-next').addEventListener('click', () => changeOngoingWeek(1));
+        document.getElementById('ongoing-this-week').addEventListener('click', goToOngoingThisWeek);
+        document.getElementById('ongoing-month-prev').addEventListener('click', () => changeOngoingMonth(-1));
+        document.getElementById('ongoing-month-next').addEventListener('click', () => changeOngoingMonth(1));
+        document.getElementById('ongoing-this-month').addEventListener('click', goToOngoingThisMonth);
 
-        // Kanban drop zones
-        setupKanbanDropZones();
-
-        // Analytics controls
         document.getElementById('analytics-year-prev').addEventListener('click', () => changeAnalyticsYear(-1));
         document.getElementById('analytics-year-next').addEventListener('click', () => changeAnalyticsYear(1));
 
-        // New todo form
-        newTodoForm.addEventListener('submit', handleAddTodo);
-
-        // Auto-init view state
         if (localStorage.getItem('todo_token')) {
             setLoginView(true);
         } else {

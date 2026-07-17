@@ -82,12 +82,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- State ---
     const state = {
         currentView: 'daily',
-        daily: { date: new Date().toISOString().slice(0, 10) },
+        daily: { date: formatDate(new Date()) },
         weekly: getCurrentWeekInfo(),
-        monthly: { month: new Date().toISOString().slice(0, 7) },
+        monthly: { month: formatDate(new Date()).slice(0, 7) },
         ongoing: {
             week: getCurrentWeekInfo(),
-            month: new Date().toISOString().slice(0, 7)
+            month: formatDate(new Date()).slice(0, 7)
         },
         analytics: { year: new Date().getFullYear() },
         chartInstances: {}
@@ -552,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function goToCurrentMonth() {
-        state.monthly.month = new Date().toISOString().slice(0, 7);
+        state.monthly.month = formatDate(new Date()).slice(0, 7);
         loadMonthlyView();
     }
 
@@ -688,7 +688,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function goToOngoingThisMonth() {
-        state.ongoing.month = new Date().toISOString().slice(0, 7);
+        state.ongoing.month = formatDate(new Date()).slice(0, 7);
         loadOngoingView();
     }
 
